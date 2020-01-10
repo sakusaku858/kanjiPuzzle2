@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<body>
+    <div>
+        <p>
+        漢字穴埋めパズルです。
+        スマートフォンでも遊びやすいように縦長にしました。</p>
+        <p>
+        前回、スマートフォンではリアルタイムで文字入力を連動させる機能がうまく動作しなかったので反映ボタンを用意しました。
+        右側の漢字リストに漢字を入れ反映ボタンを押すと、左側のワードリストに漢字が入力されます。
+        ソースコードを見ると答えがわかります。
+        </p>
+        <p>
+        難易度は高めです。
+        中盤は一気に埋まりますが、序盤と終盤に壁があると思います。</p>
+    </div>
+    <div id="problem">
+     </div>
+    <script type="text/javascript">
+
+        function sort(a){
+            for(var i=0;i<a.length;i++){
+                var min = i;
+                for(var j=i;j<a.length;j++){
+                    if(a[min].length>a[j].length){
+                        min=j;
+                    }
+                }
+                var tmp = a[i];
+                a[i]=a[min];
+                a[min]=tmp;
+            }
+            return a;
+        }
+
+        function makeAllKanjiList(a){
+            var kanjiList = [];
+            for(var i=0;i<a.length;i++){
+                for(var j=0;j<a[i].length;j++){
+                    if(kanjiList.indexOf(a[i][j])==-1) kanjiList.push(a[i][j]);
+                }
+            }
+            return kanjiList;
+        }
+
+        function makeShutsugenKaisuList(word){
+            var kanjiList = makeAllKanjiList(word);
+            var shutsugenKaisuList=[];
+            for(var i=0;i<kanjiList.length;i++){
+                var n=0;
+                for(var j=0;j<word.length;j++){
+                    for(var k=0;k<word[j].length;k++){
+                        if(kanjiList[i]==word[j][k]) n++;
+                    }
+                }
+                shutsugenKaisuList.push(n);
+            }
+            return shutsugenKaisuList;
+        }
+
+        function makeMainKanjiList(word){
+            var all = makeAllKanjiList(word);
+            var kaisu = makeShutsugenKaisuList(word);
+            var mainList = [];
+            for(var i=0;i<all.length;i++){
+                if(kaisu[i]!=1){
+                    mainList.push(all[i]);
+                }
+            }
+            return mainList;
+        }
+
+        function makeChikanWord(word){
+            var mainList = makeMainKanjiList(word);
+            var chikan=[];
+            for(var i=0;i<word.length;i++){
+                var w=[];
+                for(var j=0;j<word[i].length;j++){
+                    var ind = mainList.indexOf(word[i][j]);
+                    if(ind>=0){
+                        w.push(ind);
+                    }else{
+                        w.push(word[i][j]);
+                    }
+                }
+                chikan.push(w);
+            }
+            return chikan;
+        }
+       
+        function draw(word){
+            var chikan = makeChikanWord(word);
+            var pro = document.getElementById("problem");
+            for(var i=0;i<chikan.length;i++){
+                var para = document.createElement("p");
+                var str = "";
+                for(var j=0;j<chikan[i].length;j++){
+                    str = str+chikan[i][j];
+                }
+                para.innerHTML = str;
+                pro.appendChild(para);
+            }
+        }
+
+        function setKanjiToBox(num,kanji){
+            var box = document.getElementsByClassName(""+num);
+            for(var i=0;i<box.length;i++){
+                box[i].value = kanji;
+            }
+        }
+
+        function makeTable(row,column){
+            var t = document.createElement("table");
+            for(var i=0;i<row;i++){
+                var tr = document.createElement("tr");
+                t.appendChild(tr);
+                for(var j=0;j<column;j++){
+                    var td = document.createElement("td");
+                    tr.appendChild(td);
+                }
+            }
+            return t;
+        }
+
+        function getCellOfTable(table,row,column){
+            return table.children[row].children[column];
+        }
+
+        function makeTextBox(id){
+            var tb = document.createElement("input");
+            tb.type="text";
+            tb.classList.add(""+id);
+            tb.style.width = "20px";
+            return tb;
+        }
+
+        function makeWordCell(word){
+            var table = makeTable(2,word.length);
+            for(var i=0;i<word.length;i++){
+                var cell = getCellOfTable(table,0,i);
+                if(isNaN(word[i])){
+                    cell.innerHTML=word[i];
+                }else{
+                    cell.appendChild(makeTextBox(word[i]));
+                    var numCell = getCellOfTable(table,1,i);
+                    numCell.innerHTML=word[i];
+                    numCell.align = "center";
+                }
+            }
+            return table;
+        }
+
+        function makeKanjiTable(word){
+            var mainList = makeMainKanjiList(word);
+            var table = makeTable(mainList.length,2);
+            for(var i=0;i<mainList.length;i++){
+                var cell = getCellOfTable(table,i,0);
+                cell.innerHTML = i;
+                cell = getCellOfTable(table,i,1);
+                cell.appendChild(makeTextBox(i));
+            }
+            return table;
+        }
+
+        function getTableRowSize(table){
+            return table.children.length;
+        }
+
+        function hannei(kanjiTable){
+            for(var i=0;i<getTableRowSize(kanjiTable);i++){
+                var kanji = getCellOfTable(kanjiTable,i,1).children[0].value;
+                var classNum = i;
+                if(kanji!=""){
+                    var boxList = document.getElementsByClassName(""+classNum);
+                    for(var j=0;j<boxList.length;j++){
+                        boxList[j].value = kanji;
+                    }
+                }
+            }
+        }
+
+
+        function makeHanneiButton(kanjiTable){
+            var button = document.createElement("button");
+            button.innerHTML = "反映";
+            button.onclick = function(){
+                hannei(kanjiTable);
+            }
+            return button;
+        }
+
+
+        ///////main/////////
+
+        var word = [
+            "気象予報士",
+            "予定調和",
+            "確定申告",
+            "次回予告",
+            "有象無象",
+            "情報通信",
+            "告別式",
+            "未確認飛行物体",
+            "未曾有",
+            "高飛車",
+            "紙飛行機",
+            "体温調節",
+            "通気孔",
+            "回転寿司",
+            "自転車",
+            "司法書士",
+            "行書体",
+            "別府温泉",
+            "信号機",
+            "節足動物",
+            "自動運転",
+            "寿限無",
+            "等高線",
+            "共通認識",
+            "共和国",
+            "確信犯"
+            ];
+        
+        word = sort(word);
+        var p = document.getElementById("problem");
+
+        var problemTable = makeTable(1,2);
+        var kanjiTable = makeKanjiTable(word);
+        var cell = getCellOfTable(problemTable,0,1);
+        var button = makeHanneiButton(kanjiTable);
+        cell.appendChild(kanjiTable);
+        cell.appendChild(button);
+        cell = getCellOfTable(problemTable,0,0);
+        for(var i=0;i<word.length;i++){
+            cell.appendChild(makeWordCell(makeChikanWord(word)[i]));
+        }
+        p.appendChild(problemTable);
+        console.log(getTableRowSize(kanjiTable));
+
+    </script>
+</body>
+
+</html>
